@@ -60,6 +60,20 @@ class CashCardController {
         return ResponseEntity.created(locationOfNewCashCard).build();
     }
 
+    @DeleteMapping("{id}")
+    private ResponseEntity<Void> deleteCashCard(
+            @PathVariable Long id,
+            Principal principal // Add Principal to the parameter list
+    ) {
+        // Add the following 3 lines:
+        if (cashCardRepository.existsByIdAndOwner(id, principal.getName())) {
+            cashCardRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
     @GetMapping
     private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal) {
         Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
