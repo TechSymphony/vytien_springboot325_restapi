@@ -2,11 +2,9 @@ package com.techsymphony.vytien_springboot325_restfulapi;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
-import lombok.Data;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Component;
 
 import java.security.Principal;
