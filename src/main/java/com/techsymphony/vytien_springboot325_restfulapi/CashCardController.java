@@ -4,37 +4,84 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import java.net.URI;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/cashcards")
 class CashCardController {
     private final CashCardRepository cashCardRepository;
+    private final CashCardModelAssembler assembler;
 
-    private CashCardController(CashCardRepository cashCardRepository) {
+    public CashCardController(CashCardRepository cashCardRepository, CashCardModelAssembler assembler) {
         this.cashCardRepository = cashCardRepository;
+        this.assembler = assembler;
     }
 
     private CashCard findCashCard(Long requestedId, Principal principal) {
-        return cashCardRepository.findByIdAndOwner(requestedId, principal.getName());
+        return cashCardRepository.findByIdAndOwner(requestedId, principal.getName()).orElseThrow(() -> new CashCardNotFoundException(requestedId));
     }
 
     @GetMapping("/{requestedId}")
-    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
+    public ResponseEntity<EntityModel<CashCard>> findById(@PathVariable Long requestedId, Principal principal) {
         CashCard cashCard = findCashCard(requestedId, principal);
-        if (cashCard != null) {
-            return ResponseEntity.ok(cashCard);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+
+        assembler.setPrincipal(principal);
+        return ResponseEntity.ok(assembler.toModel(cashCard));
     }
+
+    @GetMapping
+    public ResponseEntity<CollectionModel<EntityModel<CashCard>>> findAll(Pageable pageable, Principal principal) {
+        Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
+                PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))));
+
+        assembler.setPrincipal(principal);
+
+        // Convert page content to List using map and toList.
+        List<EntityModel<CashCard>> cashcards = page.getContent().stream()
+                .map(assembler::toModel)
+                .toList();
+
+        return ResponseEntity.ok(CollectionModel.of(cashcards,
+                linkTo(methodOn(CashCardController.class)
+                        .findAll(pageable, principal))
+                        .withSelfRel()));
+    }
+
+
+//    @GetMapping("/{requestedId}")
+//    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
+//        CashCard cashCard = findCashCard(requestedId, principal);
+//        if (cashCard != null) {
+//            return ResponseEntity.ok(cashCard);
+//        } else {
+//            return ResponseEntity.notFound().build();
+//        }
+//    }
+//
+//    @GetMapping
+//    private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal) {
+//        Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
+//                PageRequest.of(
+//                        pageable.getPageNumber(),
+//                        pageable.getPageSize(),
+//                        pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))));
+//        return ResponseEntity.ok(page.getContent());
+//    }
 
     @PutMapping("/{requestedId}")
     private ResponseEntity<Void> putCashCard(@PathVariable Long requestedId, @RequestBody CashCard cashCardUpdate,
@@ -72,15 +119,5 @@ class CashCardController {
         }
 
         return ResponseEntity.notFound().build();
-    }
-
-    @GetMapping
-    private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal) {
-        Page<CashCard> page = cashCardRepository.findByOwner(principal.getName(),
-                PageRequest.of(
-                        pageable.getPageNumber(),
-                        pageable.getPageSize(),
-                        pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))));
-        return ResponseEntity.ok(page.getContent());
     }
 }

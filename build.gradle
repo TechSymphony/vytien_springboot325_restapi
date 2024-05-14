@@ -25,6 +25,15 @@ dependencies {
 
     // Add the following dependency
     implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Add hateoas as a dependency
+    implementation 'org.springframework.hateoas:spring-hateoas'
+
+    // Add JPA as a dependency
+//    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Add lombok
+    compileOnly 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {
