@@ -45,9 +45,9 @@ jobs:
           script: |
             cd ~/repos/vytien_springboot325_restapi
             git pull
-    #      # docker compose down
-    #      # docker build -t restapi:v1 .
-    #      # docker compose up -d
+            docker compose down
+            docker build -t restapi:v1 .
+            docker compose up -d
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
     # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
